@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "AutoCloseTabs",
+  "version": "1.0",
+  "description": "Automatycznie zamyka nieaktywne karty po określonym czasie.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}
