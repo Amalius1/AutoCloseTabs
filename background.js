@@ -1,25 +1,26 @@
 let lastActiveTabId = -1;
+const defaultTimeout = 5 * 60 * 1000; // 5 minutes
+
 chrome.tabs.onActivated.addListener(setAutoCloseInTime);
 
-const defaultTimeout = 5 * 60 * 1000;
 
 async function setAutoCloseInTime(tab) {
     if (lastActiveTabId !== -1 && await doesTabExist(lastActiveTabId)) {
         // get last tab by id
         const lastActiveTab = await chrome.tabs.get(lastActiveTabId);
-
+        const timeout = await getTimeoutTime();
         let tabInfo = {
             // create a new tab info object with a setTimeoutId of a setTimeout that will close the tab, tabId and url
             tabId: lastActiveTab.id,
             url: lastActiveTab.url,
             setTimeoutId: setTimeout(() => {
-                chrome.tabs.remove(lastActiveTab.id);
-                // console.log('Tab closed: ' + lastActiveTab.id + ' ' + lastActiveTab.url);
-            }, defaultTimeout) // 5 minutes
+                cleanupTab(lastActiveTab.id);
+                console.log('timeout for tab of URL: ' + lastActiveTab.url + ' and id ' + lastActiveTab.id + ' has been reached');
+            }, timeout)
         };
-        console.log('Tab of URL: ' + tabInfo.url + ' will be closed in 5 minutes, at ' + new Date(Date.now() + defaultTimeout));
+        console.log('Tab of URL: ' + tabInfo.url + ' will be closed in ' + timeout + ' ms, at ' + new Date(Date.now() + timeout));
         // save tabInfo to storage
-        addTabInfoToStorage(tabInfo);
+        await addTabInfoToStorage(tabInfo);
     }
     await cancelTabTimeout(tab.tabId);
 
@@ -30,7 +31,7 @@ async function setAutoCloseInTime(tab) {
 
 
 async function cancelTabTimeout(tabId) {
-    await chrome.storage.sync.get([tabId.toString()]).then((result) => {
+    await chrome.storage.local.get([tabId.toString()]).then((result) => {
         const tab = result[tabId]
         if (tab?.setTimeoutId) {
             console.log('Tab of URL: ' + tab.url + ' and id ' + tabId + ' will not be closed');
@@ -40,7 +41,7 @@ async function cancelTabTimeout(tabId) {
 }
 
 async function addTabInfoToStorage(tabInfo) {
-    chrome.storage.sync.set({[tabInfo.tabId]: tabInfo}).then(() => {
+    chrome.storage.local.set({[tabInfo.tabId]: tabInfo}).then(() => {
         console.log('Tab of URL: ' + tabInfo.url + ' and id ' + tabInfo.tabId + ' added to storage');
     });
 }
@@ -52,4 +53,23 @@ async function doesTabExist(tabId) {
     } catch (error) {
         return false; // Tab does not exist
     }
+}
+
+async function cleanupTab(tabId) {
+    // todo - strategy pattern here for different cleanup methods
+    chrome.tabs.remove(tabId);
+
+}
+
+function getTimeoutTime() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get("timeout", function (data) {
+            if (chrome.runtime.lastError) {
+                return reject(chrome.runtime.lastError);
+            }
+            let timeout = data.timeout.timeout || defaultTimeout; // Use default timeout if not defined
+            console.log("Timeout:", timeout);
+            resolve(timeout);
+        });
+    });
 }
