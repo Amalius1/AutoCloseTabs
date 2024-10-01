@@ -2,10 +2,17 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Opcje AutoCloseTabs</title>
+    <title>AutoCloseTabs Options</title>
 </head>
 <body>
-<h1>Opcje</h1>
-<p>Tutaj będą ustawienia pluginu.</p>
+<h1>Options</h1>
+<p>Timeout settings</p>
+<form id="options-form">
+    <label for="timeout">Timeout in minutes:</label>
+    <input type="number" id="timeout" name="timeout" min="1">
+    <input type="submit" value="Zapisz">
+</form>
+
+<script src="options.js"></script>
 </body>
 </html>
